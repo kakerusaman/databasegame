@@ -1,25 +1,58 @@
 import React from "react";
 import axios from "axios";
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+interface Item {
+  id: string;
+  name: string;
+}
 
 function App() {
-    const [data, setData] = React.useState<any>(null); 
-    const url = "http://127.0.0.1:8000";
-
-    const GetData = () => {
-        axios.get(url)
-        .then((res) => {
-            setData(res.data);
-        })
-        .catch((err) => {
-            console.log(err);
-        });
+  const items: Item[] = [
+    {
+      id: "1",
+      name: 'item1',
+    },
+    {
+      id: "2",
+      name: 'item2',
+    },
+    {
+      id: "3",
+      name: 'item3',
     }
-    return (
-        <div>
-            <div>ここに処理を書いていきます</div>
-            {data ? <div>{data.Hello}</div> : <button onClick={GetData}>データを取得</button>}
-        </div>
-    );
+  ];
+
+  const onDragEnd = (result: any) => {
+    // ドラッグ＆ドロップ後の処理をここに追加
+  };
+
+  return (
+    <div>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="droppable">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef}>
+              {items.map((item, index) => (
+                <Draggable key={item.id} draggableId={item.id} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      {item.name}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
+  );
 }
 
 export default App;
