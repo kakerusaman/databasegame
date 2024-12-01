@@ -1,0 +1,21 @@
+.column {
+    background-color: white;
+    border: 1px solid lightgrey;
+    border-radius: 2px;
+    width: 300px;
+    margin: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .task {
+    border: 1px solid lightgrey;
+    border-radius: 2px;
+    padding: 8px;
+    margin-bottom: 8px;
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 200px; /* 幅を設定 */
+  }
