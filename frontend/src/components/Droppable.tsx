@@ -6,7 +6,7 @@ type DroppableProps = {
   isOverAddClass?: string;
 };
 
-export default function Droppable({children, id, isOverAddClass}: DroppableProps) {
+export function Droppable({children, id, isOverAddClass}: DroppableProps) {
   const {isOver, setNodeRef} = useDroppable({
     id: id,
   });
