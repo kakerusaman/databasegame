@@ -118,11 +118,12 @@ function handleDragEnd(event: DragEndEvent) {
       collisionDetection={customClosestCorners}
       id={projectData.id}
     >
-      <div className='flex justify-center items-center w-screen h-screen gap-8'>
+      <div className='relative h-40 w-64 border-2 border-gray-400'>
         {projectData.lists.map((list) => (
+          <div key={list.id} style={{ position: 'absolute', top: `${list.top}px`, left: `${list.left}px` }}>
           <SortableContext items={list.tickets} key={list.id} id={list.id} strategy={verticalListSortingStrategy}>
-            <Droppable key={list.id} id={list.id}>
-              <div className='flex flex-col gap-8 p-4 border min-h-[600px] min-w-44'>
+            <Droppable key={list.id} id={list.id} >
+              <div className={`${list.css}`}>
                 {list.tickets.map((ticket) => (
                   <Sortable key={ticket.id} id={ticket.id}>
                     <SortableItem itemId={ticket.id}/>
@@ -131,6 +132,7 @@ function handleDragEnd(event: DragEndEvent) {
               </div>
             </Droppable>
           </SortableContext>
+          </div>
         ))}
         {activeId && (
           <DragOverlay>

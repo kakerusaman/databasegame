@@ -12,7 +12,7 @@ export default function Droppable({children, id, isOverAddClass}: DroppableProps
   });
 
   return (
-    <div ref={setNodeRef} className={isOver && isOverAddClass ? isOverAddClass : ""}>
+    <div ref={setNodeRef} className={isOver && isOverAddClass ? isOverAddClass : "" }>
       {children}
     </div>
   );
