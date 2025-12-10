@@ -1,146 +1,92 @@
-import { useState } from 'react';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import {Sortable} from './components/Sortable';
-import {SortableItem} from './components/SortableItem';
-import Droppable from './components/Droppable';
-import {
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-  type DragOverEvent,
-  closestCorners,
-  type CollisionDetection,
-  type Active,
-  type Over,
-  type UniqueIdentifier,
-} from '@dnd-kit/core';
-import { sampleProjectData, type ProjectDetail } from './data';
+import React, { useState } from "react";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import Droppable from "./components/Droppable";
+import Draggable from "./components/Draggable";
+import "./styles.css";
 
-export default function Page() {
-  const [projectData, setProjectData] = useState<ProjectDetail>(sampleProjectData);
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+const ZONES = [
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right",
+  "center",
+] as const;
 
-    const customClosestCorners: CollisionDetection = (args) => {
-    const cornerCollisions = closestCorners(args);
-    // 一番近いリストのコンテナを取得
-    const listIds = new Set(projectData.lists.map(list => list.id));
-    const closestContainer = cornerCollisions.find((c) => {
-      return listIds.has(c.id.toString())
-    });
-    if(!closestContainer) return cornerCollisions;
-    // closestContainerの中のチケットのみを取得
-    const collisions = cornerCollisions.filter(({ data }) => {
-      if(!data) return false;
-      const droppableData = data.droppableContainer?.data?.current;
-      if(!droppableData) return false;
-      const { containerId } = droppableData.sortable;
-      return closestContainer.id === containerId;
-    });
-    // 中身のチケットがない場合は、closestContainerを返す
-    if (collisions.length === 0) {
-      return [closestContainer];
-    }
-    // 中身のチケットがある場合は、collisionsを返す
-    return collisions;
+type ZoneId = (typeof ZONES)[number];
+type Zones = Record<ZoneId, string | null>;
+type Items = Record<string, string>;
+
+export default function App() {
+  const [zones, setZones] = useState<Zones>({
+    "top-left": "item-1",
+    "top-right": "item-2",
+    "bottom-left": "item-3",
+    "bottom-right": "item-4",
+    center: "item-5",
+  });
+
+  const items: Items = {
+    "item-1": "A",
+    "item-2": "B",
+    "item-3": "C",
+    "item-4": "D",
+    "item-5": "E",
   };
 
-  function handleDragStart(event: DragStartEvent) {
-  const {active} = event;
-  if(!active) return;
-  setActiveId(active.id);
-}
-
-function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const data = getData(event);
-    if(!data) return;
-    const {from, to} = data;
-    if(from.containerId !== to.containerId) return;
-    const list = projectData.lists.find(list => list.id == from.containerId);
-    if(!list) return;
-    const newTickets = arrayMove(list.tickets, from.index, to.index);
-    const newLists = projectData.lists.map(list => {
-      if(list.id === from.containerId) return {...list, tickets: newTickets};
-      return list;
-    });
-    setProjectData({...projectData, lists: newLists});
-  }
-
-  function getData(event: { active: Active; over: Over | null }) {
-  const {active, over} = event;
-  // キャンセルされた、もしくはターゲットがない場合はリターン
-  if(!active || !over) return;
-  // ドラッグアイテムとターゲットが同じ場合はリターン
-  if(active.id === over.id) return;
-  // activeのデータを取得
-  const fromData = active.data.current?.sortable;
-  if(!fromData) return;
-  // overのデータを取得
-  const toData = over.data.current?.sortable;
-  const toDataNotSortable = {
-    containerId: over.id,
-    index: NaN,
-    items: NaN,
-  }
-  // データを返す
-  return {
-    from: fromData,
-    to: toData ?? toDataNotSortable,
+  const findZoneByItem = (itemId: string): ZoneId | null => {
+    return (Object.keys(zones) as ZoneId[]).find((zone) => zones[zone] === itemId) || null;
   };
-}
 
-  function handleDragOver(event: DragOverEvent){
-    const data = getData(event);
-    if(!data) return;
-    const {from, to} = data;
-    if(from.containerId === to.containerId) return;
-    const fromList = projectData.lists.find(list => list.id == from.containerId);
-    const toList = projectData.lists.find(list => list.id == to.containerId);
-    if(!fromList || !toList) return;
-    const moveTicket = fromList.tickets.find(ticket => ticket.id === from.items[from.index]);
-    if(!moveTicket) return;
-    const newFromTickets = fromList.tickets.filter((ticket) => ticket.id !== moveTicket.id);
-    const newToTickets = [...toList.tickets.slice(0, to.index), moveTicket, ...toList.tickets.slice(to.index)];
-    const newLists = projectData.lists.map(list => {
-      if(list.id === from.containerId) return {...list, tickets: newFromTickets};
-      if(list.id === to.containerId) return {...list, tickets: newToTickets};
-      return list;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    if (activeId === overId) return;
+
+    const sourceZone = findZoneByItem(activeId);
+    const targetZone = overId as ZoneId;
+
+    if (!sourceZone) return;
+
+    setZones((prev) => {
+      const newZones = { ...prev };
+      const targetItem = prev[targetZone];
+      newZones[sourceZone] = targetItem || null;
+      newZones[targetZone] = activeId;
+      return newZones;
     });
-    setProjectData({...projectData, lists: newLists});
-  }
+  };
 
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      collisionDetection={customClosestCorners}
-      id={projectData.id}
-    >
-      <div className='relative h-40 w-64 border-2 border-gray-400'>
-        {projectData.lists.map((list) => (
-          <div key={list.id} style={{ position: 'absolute', top: `${list.top}px`, left: `${list.left}px` }}>
-          <SortableContext items={list.tickets} key={list.id} id={list.id} strategy={verticalListSortingStrategy}>
-            <Droppable key={list.id} id={list.id} >
-              <div className={`${list.css}`}>
-                {list.tickets.map((ticket) => (
-                  <Sortable key={ticket.id} id={ticket.id}>
-                    <SortableItem itemId={ticket.id}/>
-                  </Sortable>
-                ))}
-              </div>
-            </Droppable>
-          </SortableContext>
-          </div>
-        ))}
-        {activeId && (
-          <DragOverlay>
-            <SortableItem itemId={activeId} />
-          </DragOverlay>
-        )}
-      </div>
-    </DndContext>
-  );
+    <div className="app">
+      <h2>四隅 + 中央 の Droppable（dnd-kit）</h2>
+      <p className="hint">
+        ボックスをドラッグして別のマスにドロップすると入れ替わります。
+      </p>
 
+      <DndContext onDragEnd={handleDragEnd}>
+        <div className="stage" role="region" aria-label="dnd stage">
+          {ZONES.map((zoneId) => {
+            const itemId = zones[zoneId];
+            return (
+              <Droppable key={zoneId} id={zoneId}>
+                {itemId ? (
+                  <Draggable id={itemId} label={items[itemId]} />
+                ) : (
+                  <div className="placeholder" />
+                )}
+              </Droppable>
+            );
+          })}
+        </div>
+      </DndContext>
+
+      <div className="legend">
+        <strong>メモ</strong>: 各マスは 1
+        アイテムのみ。必要なら複数アイテム対応やドロップ許容（空許可など）を追加できます。
+      </div>
+    </div>
+  );
 }

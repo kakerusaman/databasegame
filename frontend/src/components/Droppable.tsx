@@ -1,4 +1,5 @@
 import {useDroppable} from '@dnd-kit/core';
+import "../styles.css";
 
 type DroppableProps = {
   children: React.ReactNode;
